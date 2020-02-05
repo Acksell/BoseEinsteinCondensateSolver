@@ -1,8 +1,11 @@
 import numpy as np
 
+from System import System
 
-class ExampleSystem:
+
+class ExampleSystem(System):
     def __init__(self, beta):
+        self.dim = 4
         self.A0 = np.array([
             [10,21,13,16],
             [21,-26,24,2],
@@ -30,3 +33,11 @@ class ExampleSystem:
         vBv = v.dot(self.B).dot(v)
         long_parenthesis = v_norm*v.dot(self.B) - vBv*v
         return self.A(v) + 2*np.cos(vBv/v_norm)*self.A1.dot(v).dot(long_parenthesis)/v_norm**2
+    J = jacobian
+
+if __name__ == "__main__":
+    system = ExampleSystem(beta=0)
+    v = np.array([-0.38007511,  0.67452702,  0.44213677, -0.45284797]) # beta=1
+    v = np.array([-0.02374334, -0.43912274,  0.82140125, -0.36319066]) # beta=1
+    v = np.array([ 0.69065738 , 0.23493648 ,-0.32858139, -0.59985956])
+    print(system.is_eigenstate(v))
