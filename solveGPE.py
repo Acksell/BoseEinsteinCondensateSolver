@@ -25,17 +25,32 @@ def normalised_random_gaussians(N, num_gaussians):
     result = np.zeros((N,N))
     for _ in range(num_gaussians):
         x0, y0 = np.random.randint(0,N), np.random.randint(0,N)
-        result += gaussian_kernel(300,0.1,center=(x0,y0))
+        result += gaussian_kernel(N,0.1,center=(x0,y0))
     return result/np.sum(result)
 
 # gkern = gaussian_kernel(300,0.1,center=(100,100))
 np.random.seed(seed=1234567)
-initstate = normalised_random_gaussians(300, num_gaussians=10)
-
+N=30
+initstate = normalised_random_gaussians(N, num_gaussians=10)
 plt.figure()
+plt.title("Initial state")
 plt.imshow(initstate, interpolation='none')
 plt.colorbar()
 plt.show()
 
-system = GPESystem(b=200, omega=0.85, L=15, N=300)
-# solver = Solver()
+
+system = GPESystem(b=200, omega=0.85, L=15, N=N)
+v1 = initstate.reshape(1, N*N)[0]
+v2 = np.zeros((1,N*N))[0]
+v = np.append(v1,v2) # vector (v1, v2)
+solver = Solver(v0=v, system=system, sigma0=-10)
+solver.solve()
+
+v1sol, v2sol = np.split(solver.v, 2)
+
+vnorm = np.square(v1sol) + np.square(v2sol)
+
+plt.figure()
+plt.imshow(vnorm.reshape(N,N), interpolation='none')
+plt.colorbar()
+plt.show()

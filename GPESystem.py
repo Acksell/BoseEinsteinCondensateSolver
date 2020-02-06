@@ -4,7 +4,7 @@ from System import System
 
 
 def asym_harm_osc(x,y):
-    return (x*x + 1.2*y*y)/2
+    return (x*x + 1.2*y*y)/6
 
 
 class GPESystem(System):
@@ -54,16 +54,16 @@ class GPESystem(System):
     def A0(self): # imaginary
         return self.ReA0() + 1j*self.ImA0()
 
-    def B(self,v1,v2):
-        diagv1, diagv2 = np.diag(v1), np.diag(v2)
+    def B(self, diagv1,diagv2):
         return np.block([
             [ diagv1.dot(diagv1)+ diagv2.dot(diagv2),  np.zeros((self.N**2,self.N**2))],
             [np.zeros((self.N**2,self.N**2)),    diagv1.dot(diagv1) + diagv2.dot(diagv2)]
         ])
         
 
-    def J(self, v1, v2):
-        v=np.array([v1,v2])
+    def J(self, v):
+        v1, v2 = np.split(v, 2) # returns the two arrays
+        # v=np.array([v1,v2])
         vnormsquared = v1.dot(v1) + v2.dot(v2)
         # normalised
         assert np.allclose(np.linalg.norm(v/np.sqrt(vnormsquared)), 1)
@@ -71,18 +71,14 @@ class GPESystem(System):
             [self.ReA0(), -self.ImA0()],
             [self.ImA0(),  self.ReA0()]
         ])
-        print(first_term.shape)
         diagv1,diagv2 = np.diag(v1), np.diag(v2)
         second_term = self.beta*np.block([
             [3*diagv1.dot(diagv1) + diagv2.dot(diagv2),       2*diagv1.dot(diagv2)  ],
             [  2*diagv1.dot(diagv2),            diagv1.dot(diagv1) + 3*diagv2.dot(diagv2)]
         ])/vnormsquared
-        print("diagv1shape", diagv1.shape)
-        print(second_term.shape)
-        print("b",self.B(v1,v2).shape)
-        print(np.outer(v,v).shape)
-        third_term = -2*self.beta*self.B(v1,v2).dot(np.outer(v,v))/vnormsquared
-        print(third_term.shape)
+        outer=np.outer(v,v)
+        third_term = self.B(diagv1,diagv2).dot(outer)
+        third_term *= -2*self.beta/vnormsquared
         return first_term + second_term + third_term
     jacobian = J
     
