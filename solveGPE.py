@@ -23,9 +23,9 @@ def gaussian_kernel(N, normstd, center=None):
 def normalised_random_gaussians(N, num_gaussians):
     """Returns NxN kernel from superpositioned random 2d-gaussians."""
     result = np.zeros((N,N))
-    for _ in range(num_gaussians):
-        x0, y0 = np.random.randint(0,N), np.random.randint(0,N)
-        result += gaussian_kernel(N,0.1,center=(x0,y0))
+    # for _ in range(num_gaussians):
+    x0, y0 = np.random.randint(0,N), np.random.randint(0,N)
+    result += gaussian_kernel(N,0.1,center=(N//2,N//2))
     return result/np.sum(result)
 
 # gkern = gaussian_kernel(300,0.1,center=(100,100))
