@@ -1,5 +1,6 @@
 
 import numpy as np
+import scipy.sparse as sp
 from numpy.linalg import inv
 from time import sleep
 
@@ -14,17 +15,8 @@ class Solver:
         self.tol = tol
         self.sigma = sigma0
 
-    def iterate(self, shifting_sigma=True):
-        # vk+1 = alpha_k*(J(v_k) - sigma*I)^-1 * v_k
-        # alpha_k = 1/norm((J(v_k) - sigma*I)^-1 * v_k)
-        J_minus_sigma = self.system.jacobian(self.v) - self.sigma*np.eye(self.dim)
-        J_minus_sigma_inv = np.linalg.inv(J_minus_sigma)
-        psi = J_minus_sigma_inv.dot(self.v)
-        alpha_k = 1/np.linalg.norm(psi)
-        # beta = 1/(self.v.dot(J_minus_sigma).dot(self.v))
-        self.v = alpha_k*psi
-        # self.sigma = self.sigma + beta
-        return self.v # normalised
+    def iterate(self):
+        self.v = self.system.iterate(self.v, self.sigma)
 
     def solve(self):
         prev_v = self.v.copy()
@@ -35,8 +27,9 @@ class Solver:
         while not (np.all(abs(self.v - prev_v) < self.tol) or np.all(abs(self.v + prev_v) < self.tol)):
             prev_v = self.v.copy()
             self.iterate()
-            # print("Iteration",i,end="\r")
-            # print("state", self.v, prev_v)
+            # print("Iteration",,end="\n")
+            print(i, self.v[:4])
+            print(i, prev_v[:4])
             i += 1
             if i >= 50000: return None
         print("Converged in %s iterations" % i, self.v, prev_v)

@@ -30,7 +30,7 @@ def normalised_random_gaussians(N, num_gaussians):
 
 # gkern = gaussian_kernel(300,0.1,center=(100,100))
 np.random.seed(seed=1234567)
-N=30
+N=130
 initstate = normalised_random_gaussians(N, num_gaussians=10)
 plt.figure()
 plt.title("Initial state")
@@ -43,7 +43,8 @@ system = GPESystem(b=200, omega=0.85, L=15, N=N)
 v1 = initstate.reshape(1, N*N)[0]
 v2 = np.zeros((1,N*N))[0]
 v = np.append(v1,v2) # vector (v1, v2)
-solver = Solver(v0=v, system=system, sigma0=-10)
+
+solver = Solver(v0=v, system=system, sigma0=-25, tol=1e-10)
 solver.solve()
 
 v1sol, v2sol = np.split(solver.v, 2)
