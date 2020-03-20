@@ -2,8 +2,7 @@
 import numpy as np
 import scipy.sparse as sp
 from numpy.linalg import inv
-from time import sleep
-
+import matplotlib.pyplot as plt
 
 
 class Solver:
@@ -15,8 +14,12 @@ class Solver:
         self.tol = tol
         self.sigma = sigma0
 
-    def iterate(self):
+    def iterate(self, dynamic_sigma=True):
+        if dynamic_sigma:
+            self.sigma = self.system.getSigma(self.v)
+        print("Sigma:",self.sigma)
         self.v = self.system.iterate(self.v, self.sigma)
+
 
     def solve(self):
         prev_v = self.v.copy()
@@ -25,20 +28,33 @@ class Solver:
         # if all elements are within tol break, but take into consideration that
         # fixed points can oscillate between -v and v for an eigenstate.
         while not (np.all(abs(self.v - prev_v) < self.tol) or np.all(abs(self.v + prev_v) < self.tol)):
+            print("Iteration",i,end="\n")
             prev_v = self.v.copy()
             self.iterate()
-            # print("Iteration",,end="\n")
-            print(i, self.v[:4])
-            print(i, prev_v[:4])
+            if i%20 == 0:
+                v1sol, v2sol = np.split(self.v, 2)
+                vnorm = np.square(v1sol) + np.square(v2sol)
+                image = vnorm.reshape(self.system.N,self.system.N)
+                # plt.imshow(vnorm.reshape(self.system.N,self.system.N), interpolation='none')
+                plt.figure()
+                plt.contour(image,levels=[1e-10,1e-8,1e-6,1e-4,1e-3,10**(-2.5),1e-2,10**(-1.75),10**(-1.5),10**(-1.25)], interpolation='none')
+                plt.colorbar()
+                plt.show()
+                plt.figure()
+                plt.imshow(image, interpolation='none')
+                # plt.contour(vnorm.reshape(self.system.N,self.system.N),levels=[1e-10,1e-8,1e-6,1e-4,1e-3,10**(-2.5),1e-2,10**(-1.75),10**(-1.5),10**(-1.25)], interpolation='none')
+                plt.colorbar()
+                plt.show()
             i += 1
             if i >= 50000: return None
         print("Converged in %s iterations" % i, self.v, prev_v)
-        lambd = sum(map(lambda w: w[0]/w[1], zip(self.system.J(self.v).dot(self.v), self.v)))/self.dim
+        # lambd = sum(map(lambda w: w[0]/w[1], zip(self.system.J(self.v)(self.v), self.v)))/self.dim
         # print("Eigenvalue", lambd)
         # print("Eigv quotient list:", list(map(lambda w: w[0]/w[1], zip(self.system.J(self.v).dot(self.v), self.v))))
         # print("Errors", self.v - self.system.J(self.v).dot(self.v)/lambd)
         # print("v, J*v:", self.v, self.system.J(self.v).dot(self.v))
-        return lambd
+        # return lambd
+        return
 
 if __name__ == "__main__":
     from matplotlib import pyplot as plt

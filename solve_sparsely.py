@@ -26,3 +26,4 @@ def SparseGPEIteration(system, v, sigma):
 
     return u1+u2
 
+if __name__ == "__main__":
