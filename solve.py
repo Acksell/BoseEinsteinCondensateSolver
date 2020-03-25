@@ -4,6 +4,8 @@ import scipy.sparse as sp
 from numpy.linalg import inv
 import matplotlib.pyplot as plt
 
+from detect_num_vortices import num_vortices 
+
 
 class Solver:
     def __init__(self, v0, system, sigma0, tol=0.0001, ):
@@ -34,8 +36,9 @@ class Solver:
             if i%20 == 0:
                 v1sol, v2sol = np.split(self.v, 2)
                 vnorm = np.square(v1sol) + np.square(v2sol)
-                image = vnorm.reshape(self.system.N,self.system.N)
                 # plt.imshow(vnorm.reshape(self.system.N,self.system.N), interpolation='none')
+                image = vnorm.reshape(self.system.N,self.system.N)
+                num_vortices(image)
                 plt.figure()
                 plt.contour(image,levels=[1e-10,1e-8,1e-6,1e-4,1e-3,10**(-2.5),1e-2,10**(-1.75),10**(-1.5),10**(-1.25)], interpolation='none')
                 plt.colorbar()
