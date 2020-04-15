@@ -25,29 +25,23 @@ class Solver:
 
     def solve(self):
         prev_v = self.v.copy()
-        self.iterate()
+        self.iterate(dynamic_sigma=False)
         i = 1
         # if all elements are within tol break, but take into consideration that
         # fixed points can oscillate between -v and v for an eigenstate.
+        # TODO give a perception of how close you are to convergence not 
         while not (np.all(abs(self.v - prev_v) < self.tol) or np.all(abs(self.v + prev_v) < self.tol)):
             print("Iteration",i,end="\n")
             prev_v = self.v.copy()
-            self.iterate()
-            if i%20 == 0:
+            self.iterate(dynamic_sigma=False)
+            print("<psi|V|psi>:",self.system.get_E(self.v))
+            if i%50 == 0:
                 v1sol, v2sol = np.split(self.v, 2)
                 vnorm = np.square(v1sol) + np.square(v2sol)
                 # plt.imshow(vnorm.reshape(self.system.N,self.system.N), interpolation='none')
                 image = vnorm.reshape(self.system.N,self.system.N)
-                num_vortices(image)
-                plt.figure()
-                plt.contour(image,levels=[1e-10,1e-8,1e-6,1e-4,1e-3,10**(-2.5),1e-2,10**(-1.75),10**(-1.5),10**(-1.25)], interpolation='none')
-                plt.colorbar()
-                plt.show()
-                plt.figure()
-                plt.imshow(image, interpolation='none')
-                # plt.contour(vnorm.reshape(self.system.N,self.system.N),levels=[1e-10,1e-8,1e-6,1e-4,1e-3,10**(-2.5),1e-2,10**(-1.75),10**(-1.5),10**(-1.25)], interpolation='none')
-                plt.colorbar()
-                plt.show()
+                print("#Vortices:", num_vortices(image))
+                # self.plot_v(image=image)
             i += 1
             if i >= 50000: return None
         print("Converged in %s iterations" % i, self.v, prev_v)
@@ -58,6 +52,20 @@ class Solver:
         # print("v, J*v:", self.v, self.system.J(self.v).dot(self.v))
         # return lambd
         return
+
+    def plot_v(self, image=None):
+        if image is None:
+            v1sol, v2sol = np.split(self.v, 2)
+            image = (np.square(v1sol) + np.square(v2sol)).reshape(self.system.N,self.system.N)
+        plt.figure()
+        plt.contour(image,levels=[1e-10,1e-8,1e-6,1e-4,1e-3,10**(-2.5),1e-2,10**(-1.75),10**(-1.5),10**(-1.25)], interpolation='none')
+        plt.colorbar()
+        plt.show()
+        plt.figure()
+        plt.imshow(image, interpolation='none')
+        plt.colorbar()
+        plt.show()
+
 
 if __name__ == "__main__":
     from matplotlib import pyplot as plt

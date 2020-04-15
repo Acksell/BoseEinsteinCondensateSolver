@@ -7,11 +7,6 @@ from System import System
 def asym_harm_osc(x,y):
     return (x*x + 1.2*y*y)
 
-def zero_boundary(L):
-    def potential(x,y):
-        return -np.cos(np.pi*x/L/2)*np.cos(np.pi*y/L/2)
-    return potential
-
 class GPESystem(System):
     def __init__(self, b, omega, L, N, potential=asym_harm_osc):
         self.N = N  # N^2 interior points
@@ -171,27 +166,27 @@ class GPESystem(System):
         f = p*v_col - A.dot(v_col)
         print("||fk||",sp.linalg.norm(f))
         # self.f_list.append(sp.linalg.norm(f))
-        print(1)
         g = self.J(v)(f)
         # outerprod = np.outer(v,v)
-        print(2)
         I = sp.eye(self.dim)
-        print(3)
         e = I.dot(-g + p*f)
-        print(4)
         e-= v_col.dot(vT.dot(-g) + vT.dot(p*f))
-        print(5)
         e+= v_col.dot((vT.dot(A) - p*vT.dot(I)).dot(f))
-        print(6)
         h = np.sqrt(2*epsilon/sp.linalg.norm(e))
         if h > hmax:
             h = hmax
         sigma = p - 1/h
-        print("returned")
         return sigma
 
     def getRayleigh(self, v):
         return v.dot(self.A(v).dot(v))/v.dot(v)
+
+    def get_E(self, v):
+        """Returns <psi | V | psi>"""
+        v1,v2 = np.split(v,2)
+        v_squared = np.square(v1) + np.square(v2)
+        return np.dot(self.V, v_squared)
+
 
 if __name__ == "__main__":
     system = GPESystem(b=200,omega=0.85,L=1,N=2)
