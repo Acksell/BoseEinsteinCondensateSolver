@@ -1,6 +1,16 @@
+import matplotlib
+import matplotlib.image
+
+import numpy as np
+
+import sys
+import time
+
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
+import matplotlib
+import cv2
 
 from solve import Solver
 from GPESystem import GPESystem
@@ -35,20 +45,6 @@ def state_to_image(v,N):
     v_squared = v_squared.reshape(N,N)
     return v_squared
 
-def gaussian_ring(R, N, SHOW=True):
-    center = (N//2, N//2)
-    x_axis = np.linspace(0, N-1, N) - center[0]
-    y_axis = np.linspace(0, N-1, N) - center[1]
-    res = [[np.exp(-(np.sqrt(x*x+y*y)-R)**2/R) for x in x_axis] for y in y_axis]
-    res = res/np.sum(res)
-    if SHOW:
-        matplotlib.image.imsave("temp.png", res, cmap='afmhot')
-        time.sleep(1)
-        pretty_image = cv2.imread("temp.png")
-        cv2.imshow("Image", pretty_image)
-        cv2.waitKey(0)
-    return res
-
 def get_initial(N, SHOW=False):
     if len(sys.argv) > 1 and ".npy" in sys.argv[1]:
         print("Loading from last state")
@@ -79,40 +75,27 @@ def get_initial(N, SHOW=False):
     assert np.allclose(np.linalg.norm(v),1)
     return v
 
-def initialize_and_solve(b, omega, N=300, sigma0=None, SHOW=False, tol=5e-8):
-    # np.random.seed(seed=1234567)
-    np.random.seed(seed=123231)
-    system = GPESystem(b=b, omega=omega, L=15, N=N)
+np.random.seed(123)
+# state = np.load("states/state_24vortices_098_2000d.npy")
+state = np.load("last_state.npy")
+# state = get_initial(300, True)
+image = state_to_image(state,300)
 
-    v=get_initial(N, SHOW=SHOW)
-    print("Initial <psi|V|psi>:",system.get_E(v))
-    solver = Solver(v0=v, system=system, sigma0=sigma0, tol=tol)
-    solver.solve(dynamic_sigma=sigma0 is None, SHOW=SHOW)
-    if SHOW:
-        solver.plot_v()
-    return solver.sigma
+font                   = cv2.FONT_HERSHEY_SIMPLEX
+bottomLeftCornerOfText = (75,75)
+fontScale              = 0.4
+fontColor              = (255,255,255)
+lineType               = 1
 
-if __name__ == "__main__":
-    import sys, time
-    SHOW = "show" in sys.argv
-    # sweep over omega and b values
-    omegas = [0.4, 0.6, 0.7, 0.75, 0.80, 0.85, 0.9, 0.95][::-1]
-    omegas = [0.4, 0.6, 0.7, 0.75, 0.80][::-1]
-    bees   = [100, 200, 400, 800][::-1]
-    should_calculate = {100:lambda om: om == 0.8, 200:lambda om: om!= 0.95 and 0.85 > om > 0.75,400:lambda om:om not in (0.75, 0.85,0.9,0.95), 800:lambda om:om < 0.85}
-    b,omega=100,0.6
-    sigma = initialize_and_solve(b,omega,SHOW=SHOW)
-    # iteration 1242 800 0.9
-    with open("sigmas.txt", 'a') as f:
-        f.write("%s, %s, %s\n" % (b,omega,sigma))
-        time.sleep(2)
+matplotlib.image.imsave("temp.png", image, cmap='afmhot')
+pretty_image = cv2.imread("temp.png")
+cv2.putText(pretty_image,'b=200,Omega=0.7', 
+    bottomLeftCornerOfText, 
+    font, 
+    fontScale,
+    fontColor,
+    lineType)
 
-    # # b 800, om 0.8
-    # for omega in omegas:
-    #     for b in bees: 
-    #         print("(b, OMEGA) = (", b, omega,")")
-    #         if should_calculate.get(b)(omega):
-    #             sigma = initialize_and_solve(b, omega, SHOW=SHOW)
-    #             with open("sigmas.txt", 'a') as f:
-    #                 f.write("%s, %s, %s\n" % (b,omega,sigma))
-    #                 time.sleep(2)
+cv2.imshow("Image", pretty_image)
+cv2.waitKey(0)
+

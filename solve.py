@@ -2,8 +2,8 @@
 import numpy as np
 import scipy.sparse as sp
 from numpy.linalg import inv
+import matplotlib
 import matplotlib.pyplot as plt
-
 from detect_num_vortices import num_vortices 
 
 
@@ -14,37 +14,53 @@ class Solver:
         self.system = system
         self.dim = len(v0)
         self.tol = tol
+        self.sigma0 = sigma0
         self.sigma = sigma0
 
     def iterate(self, dynamic_sigma=True):
         if dynamic_sigma:
             self.sigma = self.system.getSigma(self.v)
+        else:
+            self.sigma = self.sigma0
         print("Sigma:",self.sigma)
         self.v = self.system.iterate(self.v, self.sigma)
 
 
-    def solve(self):
+    def solve(self, dynamic_sigma, SHOW=False):
         prev_v = self.v.copy()
-        self.iterate(dynamic_sigma=False)
+        self.iterate(dynamic_sigma)
         i = 1
         # if all elements are within tol break, but take into consideration that
         # fixed points can oscillate between -v and v for an eigenstate.
         # TODO give a perception of how close you are to convergence not 
+        numvort = 0
         while not (np.all(abs(self.v - prev_v) < self.tol) or np.all(abs(self.v + prev_v) < self.tol)):
             print("Iteration",i,end="\n")
             prev_v = self.v.copy()
-            self.iterate(dynamic_sigma=False)
+            self.iterate(dynamic_sigma)
+            # self.iterate(dynamic_sigma)
             print("<psi|V|psi>:",self.system.get_E(self.v))
-            if i%50 == 0:
+            if i%10 == 0:
+                np.save("last_state",self.v)
+            if SHOW and ((i%10 == 0 and i < 50) or i%50 == 0):
                 v1sol, v2sol = np.split(self.v, 2)
                 vnorm = np.square(v1sol) + np.square(v2sol)
-                # plt.imshow(vnorm.reshape(self.system.N,self.system.N), interpolation='none')
                 image = vnorm.reshape(self.system.N,self.system.N)
-                print("#Vortices:", num_vortices(image))
-                # self.plot_v(image=image)
+                numvort =  num_vortices(image, SHOW_IMG=SHOW)
+                print("#Vortices:", numvort)
             i += 1
             if i >= 50000: return None
-        print("Converged in %s iterations" % i, self.v, prev_v)
+        v1sol, v2sol = np.split(self.v, 2)
+        vnorm = np.square(v1sol) + np.square(v2sol)
+        image = vnorm.reshape(self.system.N,self.system.N)
+        numvort =  num_vortices(image, SHOW_IMG=SHOW)
+        print("Converged in %s iterations with %s vortices" % (i,numvort), self.v, prev_v)
+        filename = "state_%svortices_%s_%s%s" % (numvort, str(self.system.omega).replace('.',''), self.system.b, "d" if dynamic_sigma else "")
+        np.save("states/%s.npy" % (filename), self.v)
+        import time
+        time.sleep(1)
+        matplotlib.image.imsave("states/img/%s.png" % filename, image, cmap='afmhot')
+        print("saved to states/img/%s"%filename)
         # lambd = sum(map(lambda w: w[0]/w[1], zip(self.system.J(self.v)(self.v), self.v)))/self.dim
         # print("Eigenvalue", lambd)
         # print("Eigv quotient list:", list(map(lambda w: w[0]/w[1], zip(self.system.J(self.v).dot(self.v), self.v))))
@@ -58,7 +74,7 @@ class Solver:
             v1sol, v2sol = np.split(self.v, 2)
             image = (np.square(v1sol) + np.square(v2sol)).reshape(self.system.N,self.system.N)
         plt.figure()
-        plt.contour(image,levels=[1e-10,1e-8,1e-6,1e-4,1e-3,10**(-2.5),1e-2,10**(-1.75),10**(-1.5),10**(-1.25)], interpolation='none')
+        plt.contour(image,levels=[1e-16,1e-14,1e-12,1e-10,1e-8,1e-6,1e-4,1e-3,10**(-2.5),1e-2,10**(-1.75),10**(-1.5),10**(-1.25)], interpolation='none')
         plt.colorbar()
         plt.show()
         plt.figure()

@@ -11,9 +11,10 @@ import numpy as np
 def num_vortices(image, SHOW_IMG=True):
     """param image is numpy NxN matrix"""
     np.save("vortices_test",image)
-    thresh = cv2.threshold(image, 1e-4, 1, cv2.THRESH_BINARY)[1]
-    cv2.waitKey(0)
-    cv2.imshow("Thresholded",thresh)
+    thresh = cv2.threshold(image, 3e-5, 1, cv2.THRESH_BINARY)[1]
+    if SHOW_IMG:
+        cv2.waitKey(10000)
+        cv2.imshow("Thresholded",thresh)
     # perform a connected component analysis on the thresholded
     # image, then initialize a mask to store only the "large"
     # components
@@ -52,12 +53,13 @@ def num_vortices(image, SHOW_IMG=True):
                 cv2.circle(pretty_image, (int(cX), int(cY)), int(radius+10), (0, 0, 255), 1)
         elif currentHierarchy[3] < 0: 
             # these are the outermost parent components
-            cv2.circle(pretty_image, (int(cX), int(cY)), int(radius+10), (0, 255, 0), 2)
+            if SHOW_IMG: 
+                cv2.circle(pretty_image, (int(cX), int(cY)), int(radius+10), (0, 255, 0), 2)
     
     if SHOW_IMG:
         # show the output image
         cv2.imshow("Image", pretty_image)
-        cv2.waitKey(0)
+        cv2.waitKey(10000)
         cv2.imwrite("vortices_detected.png", pretty_image) 
     return numvortices
     
